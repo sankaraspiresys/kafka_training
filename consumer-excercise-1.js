@@ -29,44 +29,6 @@ const kafka = new Kafka({
 const topic = 'message-topic'
 const consumer = kafka.consumer({ groupId: 'consumer-group-1' })
 
-/* const run = async () => {
-  await consumer.connect()
-  await consumer.subscribe({ topic, fromBeginning: true })
-  var count = 0
-  await consumer.run({
-    
-    eachMessage: async ({ topic, partition, message }) => {
-      console.log(`${topic}[${partition} | ${message.offset}] / ${message.timestamp}`)
-      console.log(`${message.value}`)
-      count ++
-
-      const msgFromProducer = JSON.parse(JSON.parse(message.value));
-
-      const msg = new Message({
-        name: msgFromProducer.name,
-        age: msgFromProducer.age
-      });
-
-      fs.appendFile('messages.txt', JSON.parse(message.value)+'\n', function (err) {
-        if (err) throw err;
-        console.log('Saved!');
-      });
-
-      msg.save()
-        .then(data => {
-            console.log(data);
-        }).catch(err => {
-          console.log(err.message)
-        })
-
-        console.log(count)
-        consumer.pause([{ topic }])
-        setTimeout(() => consumer.resume([{ topic }]), count * 1000)
-    },
-  })
-} */
-
-
 const run = async () => {
   await consumer.connect()
   await consumer.subscribe({ topic, fromBeginning: true  })

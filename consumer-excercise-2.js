@@ -17,57 +17,29 @@ const consumer = kafka.consumer({ groupId: 'consumer-group-1' })
 
 const run = async () => {
   await consumer.connect()
-  await consumer.subscribe({ topic, fromBeginning: true  })
+  await consumer.subscribe({ topic, fromBeginning: false  })
 
   await consumer.run({
-    eachBatch: async ({ batch, resolveOffset, heartbeat, isRunning, isStale }) => {
-      /* console.log(batch.topic)
-      console.log(batch.partition)
-      console.log(batch.highWatermark)
-      console.log(batch.messages) */
-        var count = 0;
-        for (let message of batch.messages) {
-            /* console.log({
-                topic: batch.topic,
-                partition: batch.partition,
-                highWatermark: batch.highWatermark,
-                message: {
-                    offset: message.offset,
-                    value: message.value.toString(),
-                    headers: message.headers,
-                }
-            }) */
-            try{
-              resolveOffset(message.offset)
-              await heartbeat()
-
-              const msgFromProducer = JSON.parse(message.value.toString());
-      
-              console.log(msgFromProducer)
-
-              let verify = function(s){ try { JSON.parse(msgFromProducer); return true; } catch (e) { return false; }}; 
-              console.log(message.offset)
-              console.log(verify())
-      
-              if(verify() == true){
-            
-                fs.appendFile('messages.txt', JSON.parse(message.value)+'\n', function (err) {
-                  if (err) throw err;
-                  console.log('Saved!');
-                });
-      
-                console.log("Writing to file \n")
-              }else{
-                count ++;
-                consumer.pause([{ topic }])
-                setTimeout(() => consumer.resume([{ topic }]), count * 1000)
-              }
-            }catch(err){
-              console.log(err)
-            }
-        }
-        
-    },
+    autoCommit: true,
+    eachMessage: async ({ topic, partition, message }) => {
+      const prefix = `${topic}[${partition} | ${message.offset}] / ${message.timestamp}`
+      const msgFromProducer = JSON.parse(message.value.toString());
+      consumer.commitOffsets([
+        { topic: topic, partition: 0, offset: parseInt(message.offset) + 1 }
+      ])
+      let verify = function(s){ try { JSON.parse(msgFromProducer); return true; } catch (e) { return false; }}; 
+      console.log("Offset ==> "+message.offset)
+      if(verify() == true){
+        fs.appendFile('messages.txt', JSON.parse(message.value)+'\n', function (err) {
+          if (err) throw err;
+        });
+        console.log("JSON Message writing to file \n")
+      }else{
+        console.log("Not JSON Message, So disconnected...")
+        await consumer.stop()
+        await consumer.disconnect()
+      }
+    }
   })
 }
 

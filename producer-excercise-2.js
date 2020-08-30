@@ -44,7 +44,7 @@ const sendMessage = (i) => {
 
 const run = async () => {
   await producer.connect()
-  for(let i=1; i <= 5; i++){
+  for(let i=1; i <= 6; i++){
       sendMessage(i);
   }
 }
